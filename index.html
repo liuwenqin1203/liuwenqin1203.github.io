@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>参赛数据分析图表</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+            font-size: 28px;
+        }
+        .chart-container {
+            margin-bottom: 50px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .chart-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #444;
+            margin-bottom: 20px;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f4f8;
+            border-radius: 5px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c5aa0;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>国赛参赛数据分析</h1>
+        
+        <!-- 第一个图表：参赛人数和学校数趋势 -->
+        <div class="chart-container">
+            <div class="chart-title">历年参赛人数与参赛学校数量趋势</div>
+            <div class="chart-wrapper">
+                <canvas id="participationChart"></canvas>
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalParticipants"></div>
+                    <div class="stat-label">2025年参赛人数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalSchools"></div>
+                    <div class="stat-label">2025年参赛学校</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="growthRate"></div>
+                    <div class="stat-label">15年增长倍数</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二个图表：我校获奖情况对比 -->
+        <div class="chart-container">
+            <div class="chart-title">我校获奖人数 vs 平均每校应获奖人数对比</div>
+            <div class="chart-wrapper">
+                <canvas id="awardChart"></canvas>
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="ourTotalAwards"></div>
+                    <div class="stat-label">我校累计获奖</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="avgExceeded"></div>
+                    <div class="stat-label">超出平均年数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="maxExceed"></div>
+                    <div class="stat-label">最大超出倍数</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 数据
+        const data = [
+            {"年份":2010,"届数":"第3届","参加决赛人数":1066,"参加学校数":107,"一等奖":0.1,"二等奖":0.2,"三等奖":0.0,"获奖人数":320,"我校一等奖":2,"我校二等奖":3,"我校三等奖":0,"总获奖数":5,"平均每校应获奖人数":2.9906542056},
+            {"年份":2011,"届数":"第4届","参加决赛人数":936,"参加学校数":126,"一等奖":0.1,"二等奖":0.2,"三等奖":0.0,"获奖人数":281,"我校一等奖":2,"我校二等奖":3,"我校三等奖":0,"总获奖数":5,"平均每校应获奖人数":2.2301587302},
+            {"年份":2012,"届数":"第5届","参加决赛人数":1231,"参加学校数":129,"一等奖":0.1,"二等奖":0.2,"三等奖":0.0,"获奖人数":369,"我校一等奖":2,"我校二等奖":5,"我校三等奖":0,"总获奖数":7,"平均每校应获奖人数":2.8604651163},
+            {"年份":2013,"届数":"第6届","参加决赛人数":1209,"参加学校数":126,"一等奖":0.1,"二等奖":0.2,"三等奖":0.0,"获奖人数":363,"我校一等奖":0,"我校二等奖":4,"我校三等奖":0,"总获奖数":4,"平均每校应获奖人数":2.880952381},
+            {"年份":2014,"届数":"第7届","参加决赛人数":1508,"参加学校数":164,"一等奖":0.1,"二等奖":0.2,"三等奖":0.0,"获奖人数":452,"我校一等奖":1,"我校二等奖":5,"我校三等奖":0,"总获奖数":6,"平均每校应获奖人数":2.756097561},
+            {"年份":2015,"届数":"第8届","参加决赛人数":1685,"参加学校数":186,"一等奖":0.1,"二等奖":0.2,"三等奖":0.0,"获奖人数":506,"我校一等奖":4,"我校二等奖":8,"我校三等奖":0,"总获奖数":12,"平均每校应获奖人数":2.7204301075},
+            {"年份":2016,"届数":"第9届","参加决赛人数":2824,"参加学校数":306,"一等奖":0.1,"二等奖":0.2,"三等奖":0.0,"获奖人数":847,"我校一等奖":6,"我校二等奖":7,"我校三等奖":0,"总获奖数":13,"平均每校应获奖人数":2.7679738562},
+            {"年份":2017,"届数":"第10届","参加决赛人数":2938,"参加学校数":283,"一等奖":0.1,"二等奖":0.2,"三等奖":0.0,"获奖人数":881,"我校一等奖":12,"我校二等奖":6,"我校三等奖":0,"总获奖数":18,"平均每校应获奖人数":3.1130742049},
+            {"年份":2018,"届数":"第11届","参加决赛人数":3587,"参加学校数":331,"一等奖":0.08,"二等奖":0.12,"三等奖":0.15,"获奖人数":1255,"我校一等奖":3,"我校二等奖":3,"我校三等奖":7,"总获奖数":13,"平均每校应获奖人数":3.7915407855},
+            {"年份":2019,"届数":"第12届","参加决赛人数":4074,"参加学校数":407,"一等奖":0.08,"二等奖":0.12,"三等奖":0.15,"获奖人数":1426,"我校一等奖":4,"我校二等奖":5,"我校三等奖":4,"总获奖数":13,"平均每校应获奖人数":3.5036855037},
+            {"年份":2020,"届数":"第13届","参加决赛人数":4538,"参加学校数":395,"一等奖":0.08,"二等奖":0.12,"三等奖":0.15,"获奖人数":1588,"我校一等奖":3,"我校二等奖":8,"我校三等奖":7,"总获奖数":18,"平均每校应获奖人数":4.0202531646},
+            {"年份":2021,"届数":"第14届","参加决赛人数":6743,"参加学校数":551,"一等奖":0.1,"二等奖":0.2,"三等奖":0.3,"获奖人数":4046,"我校一等奖":4,"我校二等奖":6,"我校三等奖":2,"总获奖数":12,"平均每校应获奖人数":7.3430127042},
+            {"年份":2022,"届数":"第15届","参加决赛人数":10344,"参加学校数":675,"一等奖":0.1,"二等奖":0.2,"三等奖":0.3,"获奖人数":6206,"我校一等奖":3,"我校二等奖":11,"我校三等奖":6,"总获奖数":20,"平均每校应获奖人数":9.1940740741},
+            {"年份":2023,"届数":"第16届","参加决赛人数":11334,"参加学校数":755,"一等奖":0.1,"二等奖":0.2,"三等奖":0.3,"获奖人数":6800,"我校一等奖":1,"我校二等奖":13,"我校三等奖":5,"总获奖数":19,"平均每校应获奖人数":9.0066225166},
+            {"年份":2024,"届数":"第17届","参加决赛人数":13213,"参加学校数":895,"一等奖":0.1,"二等奖":0.15,"三等奖":0.25,"获奖人数":6607,"我校一等奖":0,"我校二等奖":8,"我校三等奖":4,"总获奖数":12,"平均每校应获奖人数":7.382122905},
+            {"年份":2025,"届数":"第18届","参加决赛人数":15500,"参加学校数":1001,"一等奖":0.08,"二等奖":0.12,"三等奖":0.2,"获奖人数":6200,"我校一等奖":1,"我校二等奖":5,"我校三等奖":4,"总获奖数":10,"平均每校应获奖人数":6.1938061938}
+        ];
+
+        // 提取年份
+        const years = data.map(d => d.年份);
+        const participants = data.map(d => d.参加决赛人数);
+        const schools = data.map(d => d.参加学校数);
+        const ourAwards = data.map(d => d.总获奖数);
+        const avgAwards = data.map(d => d.平均每校应获奖人数);
+
+        // 第一个图表：参赛人数和学校数趋势
+        const ctx1 = document.getElementById('participationChart').getContext('2d');
+        const participationChart = new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: years,
+                datasets: [{
+                    label: '参加决赛人数',
+                    data: participants,
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'y'
+                }, {
+                    label: '参加学校数',
+                    data: schools,
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function(context) {
+                                return context[0].label + '年';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: '年份',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: '参加决赛人数',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            color: '#3498db'
+                        },
+                        ticks: {
+                            color: '#3498db'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: '参加学校数',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            color: '#e74c3c'
+                        },
+                        ticks: {
+                            color: '#e74c3c'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                }
+            }
+        });
+
+        // 第二个图表：获奖对比
+        const ctx2 = document.getElementById('awardChart').getContext('2d');
+        const awardChart = new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: years,
+                datasets: [{
+                    label: '我校获奖人数',
+                    data: ourAwards,
+                    borderColor: '#8e44ad',
+                    backgroundColor: 'rgba(142, 68, 173, 0.2)',
+                    borderWidth: 4,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#8e44ad',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 3,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }, {
+                    label: '平均每校应获奖人数',
+                    data: avgAwards,
+                    borderColor: '#ff6b6b',
+                    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    borderDash: [10, 5],
+                    pointBackgroundColor: '#ff6b6b',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#8e44ad',
+                        borderWidth: 2,
+                        callbacks: {
+                            title: function(context) {
+                                return context[0].label + '年';
+                            },
+                            afterBody: function(context) {
+                                const year = context[0].label;
+                                const yearData = data.find(d => d.年份 == year);
+                                const ratio = (yearData.总获奖数 / yearData.平均每校应获奖人数).toFixed(2);
+                                const exceed = yearData.总获奖数 > yearData.平均每校应获奖人数 ? '超出' : '低于';
+                                return `我校获奖${exceed}平均水平 ${ratio} 倍`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: '年份',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            color: '#2c3e50'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: '获奖人数',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            color: '#2c3e50'
+                        },
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // 计算统计数据
+        const latestData = data[data.length - 1];
+        const firstData = data[0];
+        
+        document.getElementById('totalParticipants').textContent = latestData.参加决赛人数.toLocaleString();
+        document.getElementById('totalSchools').textContent = latestData.参加学校数.toLocaleString();
+        document.getElementById('growthRate').textContent = (latestData.参加决赛人数 / firstData.参加决赛人数).toFixed(1) + 'x';
+        
+        const totalOurAwards = ourAwards.reduce((sum, val) => sum + val, 0);
+        const yearsExceeded = data.filter(d => d.总获奖数 > d.平均每校应获奖人数).length;
+        const maxRatio = Math.max(...data.map(d => d.总获奖数 / d.平均每校应获奖人数));
+        
+        document.getElementById('ourTotalAwards').textContent = totalOurAwards + '人';
+        document.getElementById('avgExceeded').textContent = yearsExceeded + '/' + data.length + '年';
+        document.getElementById('maxExceed').textContent = maxRatio.toFixed(1) + 'x';
+    </script>
+</body>
+</html>
